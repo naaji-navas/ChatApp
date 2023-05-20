@@ -1,0 +1,16 @@
+{
+  "name": "naji-chat",
+  "version": "1.0.0",
+  "description": "This is a chat appliction",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon backend/server.js"
+  },
+  "author": "naji",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "nodemon": "^2.0.22"
+  }
+}
