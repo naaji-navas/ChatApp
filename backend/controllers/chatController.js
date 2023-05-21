@@ -1,5 +1,5 @@
 const asyncHandler = require("express-async-handler");
-const Chat = require("../modles/chatModels");
+const Chat = require("../models/chatModels");
 const accesChat = asyncHandler(async (req, res) => {
   const { userId } = req.body;
   if (!userId) {
@@ -26,12 +26,14 @@ const accesChat = asyncHandler(async (req, res) => {
     };
     try {
       const createdChat = await Chat.create(chatData);
-      const fullChat = await Chat.findOne({ _id: createdChat.id })
-        .populate("users", "-password")
-        .populate("latestMessage");
-      res.status(201).json(fullChat);
+      const fullChat = await Chat.findOne({ _id: createdChat._id }).populate(
+        "users",
+        "-password"
+      );
+      res.status(201).send(fullChat);
     } catch (error) {
-      console.log(error);
+      res.status(400);
+      throw new Error(error.message);
     }
   }
 });
