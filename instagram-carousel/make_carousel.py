@@ -50,17 +50,17 @@ CHIP_FONT = font("/usr/share/fonts/opentype/inter/Inter-SemiBold.otf", 26)
 # vertical centre of the caption block (fraction of photo height), chip (cover only), title, subtitle, doodle
 SLIDES = [
     ("01-cover.png", 290, 0.75, "thu · 29 oct", "a random day\nat the office", "swipe", "arrow"),
-    ("02-gym.jpg", 700, 0.15, None, "gym first", "the office gym, before the inbox", "dumbbell"),
-    ("03-fit-check.png", 300, 0.80, None, "quick fit check", "navy hoodie · black polo · beige cargos", "sparkles"),
-    ("04-breakfast.jpg", 120, 0.19, None, "breakfast plan", "barley, fresh fruit, seeds & honey", "sun"),
-    ("05-work.png", 450, 0.47, None, "work mode: on", "four things on the list. optimistic.", "ticks"),
-    ("06-meeting-coffee.png", 215, 0.585, None, "meetings + coffee", "and a little tokyo on the screen", "steam"),
-    ("07-office.png", 260, 0.25, None, "office kind of day", "a slow walk around the floor", "stars"),
-    ("08-lunch.png", 380, 0.50, None, "the lunch chapter", "tandoori chicken, rotis & curry", "heart"),
-    ("09-pause.png", 230, 0.50, None, "a little pause", "the cafeteria, minus the crowd", "loops"),
-    ("10-recharge.png", 230, 0.30, None, "recharge mode", "yes, there's a nap room", "zzz"),
-    ("11-desk.png", 240, 0.33, None, "back to the desk", "with my green neighbours", "leaf"),
-    ("12-logging-off.png", 290, 0.72, None, "logging off", "little moments, ordinary day", "moon"),
+    ("02-fit-check.png", 300, 0.80, None, "quick fit check", "navy hoodie · black polo · beige cargos", "sparkles"),
+    ("03-breakfast.jpg", 120, 0.19, None, "breakfast plan", "barley, fresh fruit, seeds & honey", "sun"),
+    ("04-work.png", 450, 0.47, None, "work mode: on", "four things on the list. optimistic.", "ticks"),
+    ("05-meeting-coffee.png", 215, 0.585, None, "meetings + coffee", "and a little tokyo on the screen", "steam"),
+    ("06-office.png", 260, 0.25, None, "office kind of day", "a slow walk around the floor", "stars"),
+    ("07-lunch.png", 380, 0.50, None, "the lunch chapter", "tandoori chicken, rotis & curry", "heart"),
+    ("08-pause.png", 230, 0.50, None, "a little pause", "the cafeteria, minus the crowd", "loops"),
+    ("09-recharge.png", 230, 0.30, None, "recharge mode", "yes, there's a nap room", "zzz"),
+    ("10-desk.png", 240, 0.33, None, "back to the desk", "with my green neighbours", "leaf"),
+    ("11-logging-off.png", 290, 0.72, None, "logging off", "little moments, ordinary day", "moon"),
+    ("12-gym.jpg", 700, 0.19, None, "fit body, fit mind", "one last set before the commute", "dumbbell"),
     ("13-traffic.jpg", 380, 0.83, None, "and then…\nbangalore traffic", "the real final boss", "spiral"),
 ]
 
@@ -166,7 +166,7 @@ def doodle_strokes(kind, box, sub_box):
         head = [(ex - 22, ey - 14), (ex, ey), (ex - 16, ey + 18)]
         return [curve, head] + sparkle(x1 + 10, y0 - 4, 26) + sparkle(x0 - 26, y0 + 40, 16)
     if kind == "dumbbell":
-        dx, dy = x1 + 26, y0 + 34
+        dx, dy = cx - 43, y0 - 34
         bar = [(dx, dy), (dx + 86, dy)]
         plates = [[(px, dy - h), (px, dy + h)] for px, h in ((dx + 12, 22), (dx + 24, 15), (dx + 62, 15), (dx + 74, 22))]
         return [bar] + plates + sparkle(x0 - 32, y0 + 20, 18)
