@@ -47,20 +47,20 @@ DOODLE_FONT = font(f"{FONTS}/Caveat.ttf", 64, b"Bold")
 CHIP_FONT = font("/usr/share/fonts/opentype/inter/Inter-SemiBold.otf", 26)
 
 # file, crop top (source px, chosen to drop the old burned-in captions),
-# vertical centre of the caption block (fraction of photo height), chip, title, subtitle, doodle
+# vertical centre of the caption block (fraction of photo height), chip (cover only), title, subtitle, doodle
 SLIDES = [
     ("01-cover.png", 290, 0.75, "thu · 29 oct", "a random day\nat the office", "swipe", "arrow"),
-    ("02-fit-check.png", 300, 0.80, "08:40 am", "quick fit check", "navy hoodie · black polo · beige cargos", "sparkles"),
-    ("03-breakfast.jpg", 120, 0.19, "08:55 am", "breakfast plan", "barley, fresh fruit, seeds & honey", "sun"),
-    ("04-work.png", 450, 0.47, "09:30 am", "work mode: on", "four things on the list. optimistic.", "ticks"),
-    ("05-meeting-coffee.png", 215, 0.585, "11:00 am", "meetings + coffee", "and a little tokyo on the screen", "steam"),
-    ("06-office.png", 260, 0.25, "12:30 pm", "office kind of day", "a slow walk around the floor", "stars"),
-    ("07-lunch.png", 380, 0.50, "01:15 pm", "the lunch chapter", "tandoori chicken, rotis & curry", "heart"),
-    ("08-pause.png", 230, 0.50, "02:00 pm", "a little pause", "the cafeteria, minus the crowd", "loops"),
-    ("09-recharge.png", 230, 0.30, "02:30 pm", "recharge mode", "yes, there's a nap room", "zzz"),
-    ("10-desk.png", 240, 0.33, "03:30 pm", "back to the desk", "with my green neighbours", "leaf"),
-    ("11-logging-off.png", 290, 0.72, "06:00 pm", "logging off", "little moments, ordinary day", "moon"),
-    ("12-traffic.jpg", 380, 0.83, "06:30 pm", "and then…\nbangalore traffic", "the real final boss", "spiral"),
+    ("02-fit-check.png", 300, 0.80, None, "quick fit check", "navy hoodie · black polo · beige cargos", "sparkles"),
+    ("03-breakfast.jpg", 120, 0.19, None, "breakfast plan", "barley, fresh fruit, seeds & honey", "sun"),
+    ("04-work.png", 450, 0.47, None, "work mode: on", "four things on the list. optimistic.", "ticks"),
+    ("05-meeting-coffee.png", 215, 0.585, None, "meetings + coffee", "and a little tokyo on the screen", "steam"),
+    ("06-office.png", 260, 0.25, None, "office kind of day", "a slow walk around the floor", "stars"),
+    ("07-lunch.png", 380, 0.50, None, "the lunch chapter", "tandoori chicken, rotis & curry", "heart"),
+    ("08-pause.png", 230, 0.50, None, "a little pause", "the cafeteria, minus the crowd", "loops"),
+    ("09-recharge.png", 230, 0.30, None, "recharge mode", "yes, there's a nap room", "zzz"),
+    ("10-desk.png", 240, 0.33, None, "back to the desk", "with my green neighbours", "leaf"),
+    ("11-logging-off.png", 290, 0.72, None, "logging off", "little moments, ordinary day", "moon"),
+    ("12-traffic.jpg", 380, 0.83, None, "and then…\nbangalore traffic", "the real final boss", "spiral"),
 ]
 
 
@@ -294,14 +294,15 @@ class Slide:
             g.putalpha(self.glow.point(lambda v: int(v * ga)))
             img.alpha_composite(g)
 
-        # chips: time on the left, slide counter on the right
+        # chips: date on the cover, slide counter on the right
         a = progress(t, 0.15, 0.6)
         if a > 0:
             d = ImageDraw.Draw(img)
             y0 = 46 - int(10 * (1 - a))
-            tw = CHIP_FONT.getlength(self.chip)
-            d.rounded_rectangle((40, y0, 40 + tw + 36, y0 + 50), radius=25, fill=(255, 255, 255, int(235 * a)))
-            d.text((58, y0 + 10), self.chip, font=CHIP_FONT, fill=(30, 30, 30, int(255 * a)))
+            if self.chip:
+                tw = CHIP_FONT.getlength(self.chip)
+                d.rounded_rectangle((40, y0, 40 + tw + 36, y0 + 50), radius=25, fill=(255, 255, 255, int(235 * a)))
+                d.text((58, y0 + 10), self.chip, font=CHIP_FONT, fill=(30, 30, 30, int(255 * a)))
             counter = f"{self.idx:02d}/{self.total:02d}"
             cw2 = CHIP_FONT.getlength(counter)
             x1 = PW - 40
