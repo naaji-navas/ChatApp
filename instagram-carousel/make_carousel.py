@@ -281,7 +281,7 @@ def shadowed(layer):
 
 
 class Slide:
-    def __init__(self, i, reel=False):
+    def __init__(self, i, reel=False, speed=None, dur=None):
         name, top, anchor, self.chip, title, sub, self.doodle = SLIDES[i]
         self.idx, self.total = i + 1, len(SLIDES)
         self.stem = os.path.splitext(name)[0]
@@ -297,7 +297,7 @@ class Slide:
         else:
             self.w, self.h, self.border = W, H, BORDER
             self.pw, self.ph = PW, PH
-            self.speed, self.dur = 1.0, DURATION
+            self.speed, self.dur = speed or 1.0, dur or DURATION
             self.photo = load_photo(name, top)
         PW_, PH_ = self.pw, self.ph
         self.scrim = top_scrim(PW_, PH_)

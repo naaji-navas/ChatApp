@@ -7,9 +7,12 @@ Regenerate with `python3 make_carousel.py` (needs Pillow, numpy and ffmpeg; font
 crops live in the `SLIDES` list at the top of the script. `output/preview.mp4` (all slides back
 to back) is built too but not committed.
 
-## Reel
+## Reels
 
-`python3 make_reel.py` builds `output/reel.mp4`: the same 13 photos as one 1080×1920 (9:16) reel,
-about 35 s long and silent (add music in Instagram). Each photo is shown full-height for 3 s with the
-same captions and doodles, plus a short crossfade between photos. Crops and caption heights for the
-reel are in the `REEL` table in `make_carousel.py`.
+`python3 make_reel.py` builds two 1080×1920 (9:16) reels, about 35 s each and silent (add music in
+Instagram), 3 s per slide with a short crossfade:
+
+- `output/reel-photos.mp4`: every photo full-screen at full height, with the same captions and doodles.
+- `output/reel-carousel.mp4`: the framed carousel slides, centred on the cream background.
+
+Crops and caption heights for the photo reel are in the `REEL` table in `make_carousel.py`.
