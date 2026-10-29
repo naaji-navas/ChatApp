@@ -65,6 +65,28 @@ SLIDES = [
 ]
 
 
+# Reel (make_reel.py): 1080x1920 full-bleed, each photo shown at full height.
+REEL_W, REEL_H = 1080, 1920
+REEL_SLIDE = 3.0           # seconds per photo
+REEL_SPEED = 1.6           # caption animation runs this much faster than in the carousel
+# stem: crop top (source px, just below the old burned-in caption), horizontal centre (fraction),
+#       vertical centre of the caption block, subtitle override
+REEL = {
+    "01-cover": (262, 0.5, 0.66, "a day in my life"),
+    "02-fit-check": (200, 0.45, 0.72, None),
+    "03-breakfast": (0, 0.5, 0.25, None),
+    "04-work": (290, 0.55, 0.40, None),
+    "05-meeting-coffee": (190, 0.5, 0.55, None),
+    "06-office": (200, 0.45, 0.30, None),
+    "07-lunch": (285, 0.45, 0.50, None),
+    "08-pause": (200, 0.5, 0.50, None),
+    "09-recharge": (200, 0.5, 0.33, None),
+    "10-desk": (200, 0.5, 0.33, None),
+    "11-logging-off": (262, 0.5, 0.66, None),
+    "12-gym": (0, 0.5, 0.28, None),
+    "13-traffic": (0, 0.5, 0.70, None),
+}
+
 def ease_out(t):
     t = min(max(t, 0.0), 1.0)
     return 1 - (1 - t) ** 3
@@ -83,12 +105,23 @@ def load_photo(name, top):
     return img.crop((0, top, sw, top + ch)).resize((int(PW * 1.08), int(PH * 1.08)), Image.LANCZOS)
 
 
-def top_scrim():
+def load_reel_photo(name, top, cx, pw, ph):
+    """Tallest 9:16 window below the old burned-in caption, centred at cx (fraction of width)."""
+    img = Image.open(os.path.join(SRC, name)).convert("RGB")
+    sw, sh = img.size
+    ch = sh - top
+    cw = min(sw, round(ch * pw / ph))
+    ch = round(cw * ph / pw)
+    x = min(max(int(sw * cx - cw / 2), 0), sw - cw)
+    return img.crop((x, top, x + cw, top + ch)).resize((int(pw * 1.08), int(ph * 1.08)), Image.LANCZOS)
+
+
+def top_scrim(pw, ph):
     """Light gradient at the top so the chips read on bright ceilings."""
-    a = np.zeros((PH, PW), np.uint8)
+    a = np.zeros((ph, pw), np.uint8)
     ys = np.arange(170)
     a[:170] = (70 * (1 - ys / 170) ** 2).astype(np.uint8)[:, None]
-    layer = Image.new("RGBA", (PW, PH), (0, 0, 0, 255))
+    layer = Image.new("RGBA", (pw, ph), (0, 0, 0, 255))
     layer.putalpha(Image.fromarray(a))
     return layer
 
@@ -248,14 +281,28 @@ def shadowed(layer):
 
 
 class Slide:
-    def __init__(self, i):
+    def __init__(self, i, reel=False):
         name, top, anchor, self.chip, title, sub, self.doodle = SLIDES[i]
         self.idx, self.total = i + 1, len(SLIDES)
         self.stem = os.path.splitext(name)[0]
-        self.photo = load_photo(name, top)
-        self.scrim = top_scrim()
-        self.mask = Image.new("L", (PW, PH), 0)
-        ImageDraw.Draw(self.mask).rounded_rectangle((0, 0, PW - 1, PH - 1), radius=RADIUS, fill=255)
+        self.reel = reel
+        if reel:
+            # full-bleed 9:16, no frame or chips, captions animate faster
+            r_top, r_cx, anchor, r_sub = REEL[self.stem]
+            sub = r_sub or sub
+            self.w, self.h, self.border = REEL_W, REEL_H, 0
+            self.pw, self.ph = REEL_W, REEL_H
+            self.speed, self.dur = REEL_SPEED, REEL_SLIDE
+            self.photo = load_reel_photo(name, r_top, r_cx, self.pw, self.ph)
+        else:
+            self.w, self.h, self.border = W, H, BORDER
+            self.pw, self.ph = PW, PH
+            self.speed, self.dur = 1.0, DURATION
+            self.photo = load_photo(name, top)
+        PW_, PH_ = self.pw, self.ph
+        self.scrim = top_scrim(PW_, PH_)
+        self.mask = Image.new("L", (PW_, PH_), 0)
+        ImageDraw.Draw(self.mask).rounded_rectangle((0, 0, PW_ - 1, PH_ - 1), radius=0 if reel else RADIUS, fill=255)
 
         # caption block: centred title lines, wavy underline, handwritten subtitle
         fnt = COVER_FONT if self.idx == 1 else TITLE_FONT
@@ -263,46 +310,49 @@ class Slide:
         line_h = int(fnt.size * 1.08)
         self.sub = text_layer(sub, SUB_FONT, (255, 246, 222))
         block_h = line_h * len(self.lines) + 34 + 64
-        y = int(PH * anchor - block_h / 2)
+        y = int(PH_ * anchor - block_h / 2)
         self.line_pos = []
         widths = []
         for tile, m in self.lines:
             w = tile.width - 2 * m
             widths.append(w)
-            self.line_pos.append(((PW - w) // 2 - m, y - m - int(fnt.size * 0.12)))
+            self.line_pos.append(((PW_ - w) // 2 - m, y - m - int(fnt.size * 0.12)))
             y += line_h
-        title_box = ((PW - max(widths)) / 2, y - line_h * len(self.lines), (PW + max(widths)) / 2, y)
+        title_box = ((PW_ - max(widths)) / 2, y - line_h * len(self.lines), (PW_ + max(widths)) / 2, y)
         ul_w = min(max(widths) * 0.55, 340)
-        self.underline = [wave(PW / 2 - ul_w / 2, PW / 2 + ul_w / 2, y + 14, amp=6, periods=2.5)]
+        self.underline = [wave(PW_ / 2 - ul_w / 2, PW_ / 2 + ul_w / 2, y + 14, amp=6, periods=2.5)]
         sw = self.sub[0].width - 2 * self.sub[1]
         sub_y = y + 30
-        self.sub_pos = ((PW - sw) // 2 - self.sub[1], sub_y - self.sub[1])
-        sub_box = ((PW - sw) / 2, sub_y, (PW + sw) / 2, sub_y + 56)
+        self.sub_pos = ((PW_ - sw) // 2 - self.sub[1], sub_y - self.sub[1])
+        sub_box = ((PW_ - sw) / 2, sub_y, (PW_ + sw) / 2, sub_y + 56)
         self.doodles = doodle_strokes(self.doodle, title_box, sub_box)
 
         # soft dark glow behind the caption so it reads on any photo
-        glow = Image.new("L", (PW, PH), 0)
+        glow = Image.new("L", (PW_, PH_), 0)
         bw = max(max(widths), sw) / 2 + 120
         top_y, bot_y = title_box[1] - 50, sub_box[3] + 40
-        ImageDraw.Draw(glow).ellipse((PW / 2 - bw, top_y, PW / 2 + bw, bot_y), fill=120)
+        ImageDraw.Draw(glow).ellipse((PW_ / 2 - bw, top_y, PW_ / 2 + bw, bot_y), fill=120)
         self.glow = glow.filter(ImageFilter.GaussianBlur(70))
 
     def frame(self, t):
-        z = 1.08 - 0.08 * ease_out(t / DURATION)    # slow zoom-out
-        cw, ch = int(PW * z), int(PH * z)
+        PW_, PH_ = self.pw, self.ph
+        z = 1.08 - 0.08 * ease_out(t / self.dur)    # slow zoom-out
+        t *= self.speed                              # caption animation clock
+        cw, ch = int(PW_ * z), int(PH_ * z)
         ox, oy = (self.photo.width - cw) // 2, (self.photo.height - ch) // 2
-        img = self.photo.crop((ox, oy, ox + cw, oy + ch)).resize((PW, PH), Image.BILINEAR).convert("RGBA")
-        img.alpha_composite(self.scrim)
+        img = self.photo.crop((ox, oy, ox + cw, oy + ch)).resize((PW_, PH_), Image.BILINEAR).convert("RGBA")
+        if not self.reel:
+            img.alpha_composite(self.scrim)
 
         ga = progress(t, 0.2, 0.8)
         if ga > 0:
-            g = Image.new("RGBA", (PW, PH), (0, 0, 0, 255))
+            g = Image.new("RGBA", (PW_, PH_), (0, 0, 0, 255))
             g.putalpha(self.glow.point(lambda v: int(v * ga)))
             img.alpha_composite(g)
 
-        # chips: date on the cover, slide counter on the right
+        # chips: date on the cover, slide counter on the right (carousel only)
         a = progress(t, 0.15, 0.6)
-        if a > 0:
+        if a > 0 and not self.reel:
             d = ImageDraw.Draw(img)
             y0 = 46 - int(10 * (1 - a))
             if self.chip:
@@ -311,8 +361,8 @@ class Slide:
                 d.text((58, y0 + 10), self.chip, font=CHIP_FONT, fill=(30, 30, 30, int(255 * a)))
             counter = f"{self.idx:02d}/{self.total:02d}"
             cw2 = CHIP_FONT.getlength(counter)
-            x1 = PW - 40
-            chip = Image.new("RGBA", (PW, PH), (0, 0, 0, 0))
+            x1 = PW_ - 40
+            chip = Image.new("RGBA", (PW_, PH_), (0, 0, 0, 0))
             cd = ImageDraw.Draw(chip)
             cd.rounded_rectangle((x1 - cw2 - 36, y0, x1, y0 + 50), radius=25, fill=(0, 0, 0, int(95 * a)))
             cd.text((x1 - cw2 - 18, y0 + 10), counter, font=CHIP_FONT, fill=WHITE + (int(255 * a),))
@@ -327,7 +377,7 @@ class Slide:
             start += 0.85
 
         # underline and doodles draw on, subtitle fades in
-        ink = Image.new("RGBA", (PW, PH), (0, 0, 0, 0))
+        ink = Image.new("RGBA", (PW_, PH_), (0, 0, 0, 0))
         up = progress(t, start + 0.15, 0.6)
         if up > 0:
             draw_strokes(ink, self.underline, up, ACCENT, width=6)
@@ -349,8 +399,10 @@ class Slide:
             tile, m = self.sub
             img.alpha_composite(with_alpha(tile, sa), (self.sub_pos[0], self.sub_pos[1] + int(14 * (1 - sa))))
 
-        canvas = Image.new("RGB", (W, H), FRAME_COLOR)
-        canvas.paste(img.convert("RGB"), (BORDER, BORDER), self.mask)
+        if self.reel:
+            return img.convert("RGB")
+        canvas = Image.new("RGB", (self.w, self.h), FRAME_COLOR)
+        canvas.paste(img.convert("RGB"), (self.border, self.border), self.mask)
         return canvas
 
 
